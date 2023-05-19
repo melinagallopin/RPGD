@@ -168,10 +168,10 @@ for( name_pair in list_names_pair){
   COGs_partage[which(duplicated(COGs_partage[, 1:(ncol(counts1)+1)])==TRUE), c(2,4:(ncol(counts1)+1))] <- 0
   COGs_partage[which(duplicated(COGs_partage[, c(3,(ncol(counts1)+2):ncol(COGs_partage))])==TRUE), (ncol(counts1)+3):ncol(COGs_partage) ] <- 0
 
-  #enregistrement du fichier de compatage avec chaque contigs et COGs
-  setwd(dir = "./visu_groups")
-  write.csv(COGs_partage,file=paste0("COGs_partage_",paire1,"_",paire2,".csv"))
-  save(COGs_partage,file=paste0("COGs_partage_",paire1,"_",paire2,".RData"))
+  # #enregistrement du fichier de compatage avec chaque contigs et COGs
+  # setwd(dir = "./visu_groups")
+  # write.csv(COGs_partage,file=paste0("COGs_partage_",paire1,"_",paire2,".csv"))
+  # save(COGs_partage,file=paste0("COGs_partage_",paire1,"_",paire2,".RData"))
 
   #on change les NA en 0 pour pouvoir faire la somme
   #COGs_partage[is.na(COGs_partage)] <- 0
