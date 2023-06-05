@@ -2,12 +2,14 @@
 ## Tree
 ################################################################################
 library(ape)
+library(igraph)
 ## Get the tree
-tree <- read.tree(file = here("Arbres/TreeHyperMai2020.nwk"))
+tree <- read.tree(file = here("data/TreeHyperMai2020.nwk"))
 plot(tree)
 
 ## Species names
 sample_annotation <- read.csv(here("data/samples_annotation.txt"), sep="\t")
+#sample_annotation <- read.csv(here("data/conditions_all.csv"),sep=";")
 correspondances <- unique(sample_annotation[, c("Nom.espece", "ID.espece")])
 # Format
 correspondances[, "Nom.espece"] <- sub(" ", "_", correspondances[, "Nom.espece"])

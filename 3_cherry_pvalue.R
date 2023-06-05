@@ -7,6 +7,7 @@
 
 
 rm(list=ls())
+library(tidyverse)
 library(cherry)
 library(here)
 
@@ -16,10 +17,16 @@ directory <- "results"
 load(here(directory,"tab_pval_length.RData"))
 
 ## remove COG with no p-value for any family
-tab_pval_tmp = tab_pval
-tab_pval_tmp[is.na(tab_pval_tmp)]<-1
-which(rowSums(tab_pval_tmp[,2:8])==7)
-tab_pval= tab_pval[-which(rowSums(tab_pval_tmp[,2:8])==7),]
+#tab_pval_tmp = tab_pval
+tab_pval = tab_pval[complete.cases(tab_pval),]
+
+par(mfrow=c(2,2))
+for(i in 2:8){
+hist(tab_pval[,i])
+}
+#tab_pval_tmp[is.na(tab_pval_tmp)]<-1
+#which(rowSums(tab_pval_tmp[,2:8])==7)
+#tab_pval= tab_pval[-which(rowSums(tab_pval_tmp[,2:8])==7),]
 
 #on met tout en lignes ==> trois colonnes : COG - couple - pvalue
 gather_pvalue_tmp <- gather(tab_pval, colnames(tab_pval)[-1], key="pair", value="pvalue")
