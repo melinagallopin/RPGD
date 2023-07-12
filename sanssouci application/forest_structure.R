@@ -13,6 +13,32 @@ for (i in 2:length(vect_couple)){
 basic_tree = c(c())
 
 
+## Création de tab_pval sans NA (correspond à une paire d'espèce ne possèdant pas le cog associé).----
+
+nona_tab_pval <- tab_pval[!rowSums(is.na(tab_pval))>0,]
+
+data <-c()
+vect_couple<-colnames(nona_tab_pval)
+number_cog <- nona_tab_pval[,1]
+
+for (i in 1:length(nona_tab_pval[,1])){
+  for (j in 2:length(vect_couple)){
+  ID <- paste(number_cog[i],c(vect_couple[j]))
+  p_value <- nona_tab_pval[i,j]
+  data <- rbind(data,c(ID,p_value))
+  }}
+p_values <-c()
+vect_couple<-colnames(nona_tab_pval)
+number_cog <- nona_tab_pval[,1]
+
+for (i in 1:length(nona_tab_pval[,1])){
+  for (j in 2:length(vect_couple)){
+    p_value <- nona_tab_pval[i,j]
+    p_values <- rbind(p_values,p_value)
+  }}
+
+## Structure d'arbre----
+
 ## Rassemblement par 
 forest <- c()
 data <- c()
@@ -29,3 +55,4 @@ for (i in length(tab_pval[,1])) {
     
   }
 }
+rm(list = ls())
