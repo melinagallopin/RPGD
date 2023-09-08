@@ -244,3 +244,39 @@ get_Vstar_cogs_phylotree_no_na <- function(HierarTree,cog_p_values,method,alpha)
 }
 
 results <- get_Vstar_cogs_phylotree_no_na(HierarTree,tab_pval_no_na,zeta.HB.no.extension,0.01)
+
+HB_procedure <- function(p_values, alpha) {
+  order_p_val <- order(p_values)
+  ordered_p_values <- p_values[order_p_val]
+  tresholds <- alpha/length(p_values):1
+  indices <- which(ordered_p_values-tresholds > 0)
+  if (!length(indices)){
+    return(order_p_val)
+  }
+  else{
+    return(order_p_val[1:(indices[1]-1)])
+  }
+}
+
+global_HB <- function(cog_p_values,alpha){
+  reduced_tab <- cog_p_values[2:length(cog_p_values)]
+  p_values <- t(data.frame(p_values=matrix(t(reduced_tab))))
+  indices_HB <- HB_procedure(p_values,alpha)
+  nb_p_values_by_cog <- length(cog_p_values)-1
+  nb_cog <- length(cog_p_values[,1])
+  nb_false_positives_by_cog <- rep(7,each = nb_cog) 
+  for (index in indices_HB){
+    nb_false_positives_by_cog[index %/% nb_p_values_by_cog +1] <- nb_false_positives_by_cog[index %/% nb_p_values_by_cog +1] - 1
+  }
+  return(cbind.data.frame(cog_p_values[,1],nb_false_positives_by_cog))
+}
+
+results_HB_glob <- global_HB(tab_pval_no_na,0.01)
+
+nb_HB_glob_better <- sum(results_bis[,2] - results_HB_glob[,2] > 0)
+
+nb_HB_loc_better <- sum(results_bis[,2] - results_HB_glob [,2] < 0)
+
+nb_positives_HB_glob <- 7*5895 - sum(results_HB_glob[,2])
+
+nb_positives_HB_loc <- 7*5895 - sum(results_bis[,2])
