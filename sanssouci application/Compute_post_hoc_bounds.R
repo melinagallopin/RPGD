@@ -2,6 +2,8 @@ load("results/hierarchy.RData")
 load("results/tab_pval_length.RData")
 library(sanssouci)
 
+## Debug functions ---------------
+
 zetas.tree.no.extension <- function(C, leaf_list, method, pvalues, alpha, refine=FALSE, verbose=FALSE) {
   H <- length(C)
   K <- nb.elements.no.extension(C)
@@ -102,6 +104,7 @@ V.star.no.extension <- function(S, C, ZL, leaf_list) {
   return(sum(Vec))
 }
 
+## Functions for tree usage ------------
 
 is_in <- function(x,y) {
   if (y[1]<=x[1] && y[2]>=x[length(x)] ){
@@ -243,7 +246,7 @@ get_Vstar_cogs_phylotree_no_na <- function(HierarTree,cog_p_values,method,alpha)
   return(list(data.frame(cbind(cog_p_values[1],Vstar_cog)),nb_diff)) ## delete nb_diff for usage
 }
 
-results <- get_Vstar_cogs_phylotree_no_na(HierarTree,tab_pval_no_na,zeta.HB.no.extension,0.01)
+## Functions for HB global procedure -------
 
 HB_procedure <- function(p_values, alpha) {
   order_p_val <- order(p_values)
@@ -259,24 +262,79 @@ HB_procedure <- function(p_values, alpha) {
 }
 
 global_HB <- function(cog_p_values,alpha){
-  reduced_tab <- cog_p_values[2:length(cog_p_values)]
-  p_values <- t(data.frame(p_values=matrix(t(reduced_tab))))
+  p_values <- t(data.frame(p_values=matrix(t(cog_p_values[colnames(cog_p_values)[-1]]))))
   indices_HB <- HB_procedure(p_values,alpha)
   nb_p_values_by_cog <- length(cog_p_values)-1
   nb_cog <- length(cog_p_values[,1])
-  nb_false_positives_by_cog <- rep(7,each = nb_cog) 
+  bound_false_positives_by_cog <- rep(nb_p_values_by_cog,each = nb_cog) 
   for (index in indices_HB){
-    nb_false_positives_by_cog[index %/% nb_p_values_by_cog +1] <- nb_false_positives_by_cog[index %/% nb_p_values_by_cog +1] - 1
+    bound_false_positives_by_cog[index %/% nb_p_values_by_cog +1] <- bound_false_positives_by_cog[index %/% nb_p_values_by_cog +1] - 1
   }
-  return(cbind.data.frame(cog_p_values[,1],nb_false_positives_by_cog))
+  return(cbind.data.frame(cog_p_values[,1],bound_false_positives_by_cog))
 }
 
-results_HB_glob <- global_HB(tab_pval_no_na,0.01)
+## Naive refinement -------------
+
+temp_0 <- sum(unlist(get_zetas_phylotree_no_na(HierarTree,tab_pval_no_na,zeta.HB.no.extension,0.05))==0)
+number_of_regions_at_0 <- temp_0
+K <- nb.elements.no.extension(get_full_forest(HierarTree,tab_pval_no_na))
+while (temp_0 != 0L) {
+temp_0 <- sum(unlist(get_zetas_phylotree_no_na(HierarTree,tab_pval_no_na,zeta.HB.no.extension,0.05*(K/(K - number_of_regions_at_0))))==0) - number_of_regions_at_0
+number_of_regions_at_0 <- number_of_regions_at_0 + temp_0
+print(temp_0)
+}
+zetas_refinement <- get_zetas_phylotree_no_na(HierarTree,tab_pval_no_na,zeta.HB.no.extension,0.05*(K/(K - number_of_regions_at_0)))
+zetas <- get_zetas_phylotree_no_na(HierarTree,tab_pval_no_na,zeta.HB.no.extension,0.05)
+nb_change <- sum(unlist(zetas) - unlist(zetas_refinement) != 0)
+
+## Simes --------------------
+
+simes_procedure <- function(cog_p_values,alpha){
+  p_values <- t(data.frame(p_values=matrix(t(cog_p_values[colnames(cog_p_values)[-1]]))))
+  nb_p_values_by_cog <- length(cog_p_values)-1
+  nb_cog <- length(cog_p_values[,1])
+  bound_false_positives_by_cog <- rep(nb_p_values_by_cog,each = nb_cog)
+  for (i in 1:nb_cog){
+    bound_false_positives_by_cog[i] <- posthocBySimes(p_values,((i-1)*nb_p_values_by_cog +1):(i*nb_p_values_by_cog +1),alpha,Rcpp = TRUE)
+    print(i)
+    print(((i-1)*nb_p_values_by_cog +1):(i*nb_p_values_by_cog +1))
+  }
+  return(cbind.data.frame(COG_ID = cog_p_values[,1],Bound_Simes = bound_false_positives_by_cog))
+}
+
+
+## Tests --------------------
+
+results <- get_Vstar_cogs_phylotree_no_na(HierarTree,tab_pval_no_na,zeta.HB.no.extension,0.05)
+
+results_bis <- results[[1]]
+
+results_HB_glob <- global_HB(tab_pval_no_na,0.05)
 
 nb_HB_glob_better <- sum(results_bis[,2] - results_HB_glob[,2] > 0)
 
 nb_HB_loc_better <- sum(results_bis[,2] - results_HB_glob [,2] < 0)
 
+nb_cherry_better_than_hb_tree <- sum(results_bis[,2] + tab_pval_cherry[,9] > 7)
+
+nb_cherry_better_than_hb_glob <- sum(tab_pval_cherry[,9] + results_HB_glob[,2] > 7)
+
+nb_hb_tree_better_than_cherry <- sum(results_bis[,2] + tab_pval_cherry[,9] < 7)
+
+nb_hb_glob_better_than_cherry <- sum(tab_pval_cherry[,9] + results_HB_glob[,2] < 7)
+
 nb_positives_HB_glob <- 7*5895 - sum(results_HB_glob[,2])
 
 nb_positives_HB_loc <- 7*5895 - sum(results_bis[,2])
+
+results_simes <- simes_procedure(tab_pval,0.05)
+m <- 10000
+m1 <- 200
+p <- 1-pnorm(c(rnorm(m1, mean=4), rnorm(m-m1, mean=0)))
+R <- union(1:10, sample(m, 10))
+alpha <- 0.10
+if (require("cherry")) {
+  hom <- hommelFast(p)
+  pickSimes(hom, R, silent=TRUE, alpha = alpha)
+}
+posthocBySimes(p, R, alpha=alpha)
