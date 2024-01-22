@@ -3,8 +3,9 @@
 ################################################################################
 library(ape)
 library(igraph)
+library(here)
 ## Get the tree
-tree <- read.tree(file = here("data/TreeHyperMai2020.nwk"))
+tree <- read.tree(file = here("data/TreeHypermai2020.nwk"))
 plot(tree)
 
 ## Species names
