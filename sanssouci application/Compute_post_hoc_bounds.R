@@ -302,6 +302,36 @@ simes_procedure <- function(cog_p_values,alpha){
   return(cbind.data.frame(COG_ID = cog_p_values[,1],Bound_Simes = bound_false_positives_by_cog))
 }
 
+## Cherry ----------
+
+library(cherry)
+library(here)
+
+par(mfrow=c(2,2))
+for(i in 2:8){
+  hist(tab_pval[,i])
+}
+
+reduced_tab <- tab_pval_no_na[2:length(tab_pval_no_na)]
+p_values <- t(data.frame(p_values=matrix(t(reduced_tab))))
+
+#correction d'hommel
+hom <- hommelFast(as.numeric(p_values),simes=TRUE)
+
+#donne les vrais positifs
+cogs_H1 <- sapply(tab_pval_no_na$COG_ID, FUN=function(i) pickSimes(hom, select=tab_pval_no_na$COG_ID == i))
+
+# cogs_H1_list <- list()
+# for(ut in tab_pval$COG_ID){
+#   print(ut)
+#   cogs_H1_list[ut] <- pickSimes(hom, select=tab_pval_no_na$COG_ID == ut)
+# }
+# 
+# tab_pval_no_na[tab_pval_no_na$COG_ID == "3564",]
+
+#tableau de résultat
+bound_tp_cherry <- data.frame(COG_ID=tab_pval$COG_ID,  TP_pred=cogs_H1)
+
 
 ## Tests --------------------
 
@@ -315,19 +345,19 @@ nb_HB_glob_better <- sum(results_bis[,2] - results_HB_glob[,2] > 0)
 
 nb_HB_loc_better <- sum(results_bis[,2] - results_HB_glob [,2] < 0)
 
-nb_cherry_better_than_hb_tree <- sum(results_bis[,2] + tab_pval_cherry[,9] > 7)
+nb_cherry_better_than_hb_tree <- sum(results_bis[,2] + bound_tp_cherry[,2] > 7)
 
-nb_cherry_better_than_hb_glob <- sum(tab_pval_cherry[,9] + results_HB_glob[,2] > 7)
+nb_cherry_better_than_hb_glob <- sum(bound_tp_cherry[,2] + results_HB_glob[,2] > 7)
 
-nb_hb_tree_better_than_cherry <- sum(results_bis[,2] + tab_pval_cherry[,9] < 7)
+nb_hb_tree_better_than_cherry <- sum(results_bis[,2] + bound_tp_cherry[,2] < 7)
 
-nb_hb_glob_better_than_cherry <- sum(tab_pval_cherry[,9] + results_HB_glob[,2] < 7)
+nb_hb_glob_better_than_cherry <- sum(bound_tp_cherry[,2] + results_HB_glob[,2] < 7)
 
 nb_positives_HB_glob <- 7*5895 - sum(results_HB_glob[,2])
 
 nb_positives_HB_loc <- 7*5895 - sum(results_bis[,2])
 
-results_simes <- simes_procedure(tab_pval,0.05)
+
 m <- 10000
 m1 <- 200
 p <- 1-pnorm(c(rnorm(m1, mean=4), rnorm(m-m1, mean=0)))
